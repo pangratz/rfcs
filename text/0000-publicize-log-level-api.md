@@ -1,45 +1,93 @@
-- Start Date: 2015-06-14
+- Start Date: 2015-06-15
 - RFC PR: (leave this empty)
 - Ember Issue: (leave this empty)
 
 # Summary
 
-Publicize Log Level API for `Ember.deprecate` to allow different log levels.
+Deprecations and warnings in Ember.js should have configurable default log
+levels (raise, log, silence) and individual notice log levels. For example,
+in Ember 1.13 many view deprecations are silenced in the Ember codebase
+itself.
+
+Currently this is implemented using private APIs:
+
+  * `Ember.Debug._addDeprecationLevel`
+  * `Ember.Debug._deprecationLevels`
+
+However Ember-Data and the Ember Inspector have both requested a public
+API solution for this challenge.
 
 # Motivation
 
-Currently a call to `Ember.deprecate()` either logs the deprecation message or
-throws an error, depending on the `ENV['RAISE_ON_DEPRECATION']` flag. Some
-deprecations need much work so the code base is fully transitioned into the
-new, preferred way. In [PR #1141](https://github.com/emberjs/ember.js/pull/11419)
+`Ember.deprecate` and `Ember.warn` usually log messages. With `ENV.RAISE_ON_DEPRECATION`
+all deprecations will throw an exception. In some scenarios, this
+is less than ideal:
+
+* Ember itself needs a way to silence some deprecations before their usage
+  is completely removed from tests. For example, many view APIs in Ember 1.13.
+* The Ember inspector desires to raise on specific deprecations, or silence
+  specific deprecations.
+* Ember-Data also desires to silence some deprecations in tests
+
+In [PR #1141](https://github.com/emberjs/ember.js/pull/11419)
 a private log level API has been introduced, which allows finer grained control
 if specific deprecations should be logged, throwing an error or be silenced
-completely:
+completely. For example:
 
+```js
+Ember.Debug._addDeprecationLevel('my-feature', Ember.Debug._deprecationLevels.LOG);
+// ...
+Ember.deprecate("x is deprecated, use Y instead", false, { id: 'my-feature' });
+```
 
-    Ember.Debug._addDeprecationLevel('my-feature', Ember.Debug._deprecationLevels.LOG);
-    ...
-    Ember.deprecate("x is deprecated, use Y instead", false, { id: 'my-feature' });
-
-
-Since this is currently a private API, its use is discouraged outside internals
-of Ember.js, though a certain usefulness is given.
+This RFC proposes to extend and make public the functionality of that interal
+API.
 
 # Detailed design
 
-Publicize the current private APIs by simple rename:
+A log level API should be exposed for deprecations and warnings:
 
-    Ember.Debug._addDeprecationLevel -> Ember.Debug.addDeprecationLevel
-    Ember.Debug._deprecationLevels -> Ember.Debug.deprecationLevels
+```js
+Ember.Debug.deprecations.setLevel(id, level);
+Ember.Debug.deprecations.setDefaultLevel(level);
+Ember.Debug.warnings.setLevel(id, level);
+Ember.Debug.warnings.setDefaultLevel(level);
+```
+
+And the various levels should be exposed:
+
+```js
+Ember.Debug.logLevels.RAISE
+Ember.Debug.logLevels.LOG
+Ember.Debug.logLevels.SILENCE
+```
+
+Setting a default level applies that level to any calls without an explicitly
+set level. For example:
+
+```js
+Ember.Debug.deprecations.setDefaultLevel(Ember.Debug.logLevels.RAISE);
+Ember.deprecate('Oh my, this raises');
+```
+
+An id can be passed to `setLevel` to override the default:
+
+```js
+Ember.Debug.deprecations.setDefaultLevel(Ember.Debug.logLevels.RAISE);
+Ember.Debug.deprecations.setLevel('foo', Ember.Debug.logLevels.SILENCE);
+Ember.deprecate('Shhhh, stay quiet', false, {id: 'foo'});
+```
 
 # Drawbacks
 
-Unsure of any at this time.
+This is inspired by a new API, just added recently in Ember 1.13. We may be
+missing a more general primative unrelated to log level, or want to extend
+this functionality for assertions.
 
 # Alternatives
 
-- custom depreaction handling
+Each app can stub out `deprecate` and `warn`.
 
 # Unresolved questions
 
-- Change API besides a simple rename?
+None
