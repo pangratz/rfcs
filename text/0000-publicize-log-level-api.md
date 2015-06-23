@@ -48,34 +48,31 @@ API.
 A log level API should be exposed for deprecations and warnings:
 
 ```js
-Ember.Debug.deprecations.setLevel(id, level);
-Ember.Debug.deprecations.setDefaultLevel(level);
-Ember.Debug.warnings.setLevel(id, level);
-Ember.Debug.warnings.setDefaultLevel(level);
-```
+import DeprecationManager from 'ember-debug';
+import { LOG, SILENCE, THROW } from 'ember-debug/log-levels';
 
-And the various levels should be exposed:
-
-```js
-Ember.Debug.logLevels.RAISE
-Ember.Debug.logLevels.LOG
-Ember.Debug.logLevels.SILENCE
+DeprecationManager.deprecations.setLevel(id, level);
+DeprecationManager.deprecations.setDefaultLevel(level);
+DeprecationManager.warnings.setLevel(id, level);
+DeprecationManager.warnings.setDefaultLevel(level);
 ```
 
 Setting a default level applies that level to any calls without an explicitly
 set level. For example:
 
 ```js
-Ember.Debug.deprecations.setDefaultLevel(Ember.Debug.logLevels.RAISE);
-Ember.deprecate('Oh my, this raises');
+import { deprecate } from 'ember-debug'
+
+DeprecationManager.deprecations.setDefaultLevel(RAISE);
+deprecate('Oh my, this raises');
 ```
 
 An id can be passed to `setLevel` to override the default:
 
 ```js
-Ember.Debug.deprecations.setDefaultLevel(Ember.Debug.logLevels.RAISE);
-Ember.Debug.deprecations.setLevel('foo', Ember.Debug.logLevels.SILENCE);
-Ember.deprecate('Shhhh, stay quiet', false, {id: 'foo'});
+DeprecationManager.deprecations.setDefaultLevel(RAISE);
+DeprecationManager.deprecations.setLevel('foo', SILENCE);
+deprecate('Shhhh, stay quiet', false, {id: 'foo'});
 ```
 
 # Drawbacks
