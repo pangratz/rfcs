@@ -44,7 +44,7 @@ cost of a complex log-level API.
 # Detailed design
 
 A handler for deprecations can be registered. This handler will be called
-with relevent information about a deprecation, including gaurentees about
+with relevent information about a deprecation, including guarantees about
 the presence of these items:
 
 * The deprecation message
@@ -106,7 +106,7 @@ registerHandler(function secondDeprecationHandler(message, options, next) {
 });
 ```
 
-The first registed handler will recieve Ember's default behavior as `next`.
+The first registed handler will receive Ember's default behavior as `next`.
 
 ##### new assertions for deprecate and warn
 
